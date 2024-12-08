@@ -1,6 +1,8 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { supabase } from '$lib/db/supabase';
+  import { invalidate } from '$app/navigation';
+
+  export let data;
 
   let email = '';
   let password = '';
@@ -10,15 +12,15 @@
   async function handleLogin() {
     try {
       loading = true;
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      const { data: authData, error: signInError } = await data.supabase.auth.signInWithPassword({
         email,
         password
       });
 
       if (signInError) throw signInError;
 
-      if (data.session) {
-        console.log('Login successful, session:', data.session);
+      if (authData.session) {
+        await invalidate('supabase:auth');
         await goto('/', { replaceState: true });
       }
     } catch (err) {
@@ -29,6 +31,7 @@
     }
   }
 </script>
+
 
 <div class="flex min-h-full flex-col justify-center px-6 py-12">
   <div class="sm:mx-auto sm:w-full sm:max-w-sm">

@@ -1,8 +1,14 @@
 <script lang="ts">
-  import { supabase } from '$lib/db/supabase';
+  import type { Database } from '../DatabaseDefinitions';
+
+  export let data;
 
   let searchQuery = '';
-  let searchResults: any[] = [];
+  let searchResults: Array<
+    Database['public']['Tables']['components']['Row'] & {
+      resistor_specs?: Array<Database['public']['Tables']['resistor_specs']['Row']>
+    }
+  > = [];
   let loading = false;
 
   async function handleSearch() {
@@ -10,14 +16,14 @@
 
     loading = true;
     try {
-      const { data, error } = await supabase
+      const { data: searchData, error } = await data.supabase
         .rpc('search_components_fuzzy', {
           search_query: searchQuery,
           similarity_threshold: 0.3
         });
 
       if (error) throw error;
-      searchResults = data || [];
+      searchResults = searchData || [];
     } catch (err) {
       console.error('Search error:', err);
     } finally {
