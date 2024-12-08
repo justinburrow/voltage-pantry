@@ -30,7 +30,8 @@
           family,
           manufacturer,
           quantity,
-          location
+          location,
+          user_id: (await supabase.auth.getUser()).data.user?.id
         })
         .select()
         .single();

@@ -48,6 +48,27 @@
     </div>
   </div>
 
+  <div class="max-w-4xl mx-auto mt-4">
+    {#if searchResults.length > 0}
+      <div class="p-4 bg-gray-100 rounded">
+        <details>
+          <summary class="cursor-pointer">Debug Info (Results Found)</summary>
+          <pre class="mt-2 p-2 bg-white rounded text-sm overflow-auto">
+            {JSON.stringify(searchResults, null, 2)}
+          </pre>
+        </details>
+      </div>
+    {:else if searchQuery}
+      <div class="p-4 bg-gray-100 rounded">
+        <details>
+          <summary class="cursor-pointer">Debug Info (No Results)</summary>
+          <p class="mt-2">Search query: "{searchQuery}"</p>
+          <p>No results found</p>
+        </details>
+      </div>
+    {/if}
+  </div>
+
   {#if searchResults.length > 0}
     <div class="max-w-4xl mx-auto">
       <h2 class="text-xl font-semibold mb-4">Results</h2>

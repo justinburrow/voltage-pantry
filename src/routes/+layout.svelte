@@ -1,3 +1,4 @@
+// src/routes/+layout.svelte
 <script lang="ts">
   import { page } from '$app/stores';
   import { supabase } from '$lib/db/supabase';

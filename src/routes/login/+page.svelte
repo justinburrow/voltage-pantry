@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { enhance } from '$app/forms';
   import { goto } from '$app/navigation';
   import { supabase } from '$lib/db/supabase';
 
@@ -11,15 +10,19 @@
   async function handleLogin() {
     try {
       loading = true;
-      const { error: err } = await supabase.auth.signInWithPassword({
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
-      if (err) throw err;
+      if (signInError) throw signInError;
 
-      goto('/');
+      if (data.session) {
+        console.log('Login successful, session:', data.session);
+        await goto('/', { replaceState: true });
+      }
     } catch (err) {
+      console.error('Login error:', err);
       error = err instanceof Error ? err.message : 'An error occurred';
     } finally {
       loading = false;
@@ -82,12 +85,5 @@
         </button>
       </div>
     </form>
-
-    <p class="mt-10 text-center text-sm text-gray-500">
-      Not a member?
-      <a href="/signup" class="font-semibold leading-6 text-blue-600 hover:text-blue-500">
-        Sign up now
-      </a>
-    </p>
   </div>
 </div>
