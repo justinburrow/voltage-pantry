@@ -1,4 +1,3 @@
-// src/DatabaseDefinitions.ts
 export type Database = {
 	public: {
 		Tables: {

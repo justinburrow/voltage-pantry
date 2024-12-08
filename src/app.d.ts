@@ -1,9 +1,7 @@
-// src/app.d.ts
-import { SupabaseClient, Session } from '@supabase/supabase-js';
+import type { SupabaseClient, Session } from '@supabase/supabase-js';
 
 declare global {
 	namespace App {
-		// interface Error {}
 		interface Locals {
 			supabase: SupabaseClient;
 			getSession(): Promise<Session | null>;
@@ -11,9 +9,8 @@ declare global {
 		interface PageData {
 			session: Session | null;
 		}
-		// interface Platform {}
+		interface Platform {}
 	}
 }
 
-// Make sure to keep this! It's crucial
 export {};
