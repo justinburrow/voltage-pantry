@@ -8,6 +8,7 @@ declare global {
 		}
 		interface PageData {
 			session: Session | null;
+			locations?: Database['public']['Tables']['locations']['Row'][];
 		}
 		interface Platform {}
 	}

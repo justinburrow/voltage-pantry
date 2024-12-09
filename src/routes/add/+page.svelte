@@ -1,5 +1,10 @@
 <script lang="ts">
-  import { supabase } from '$lib/db/supabase';
+  import { onMount } from 'svelte';
+  import type { Database } from '$app/DatabaseDefinitions';
+
+  export let data;
+  let locations: Database['public']['Tables']['locations']['Row'][] = [];
+  let supabase = data.supabase;
 
   let type = 'resistor';
   let family = '';
@@ -16,6 +21,20 @@
   let error: string | null = null;
   let success = false;
 
+  onMount(async () => {
+    const { data: locationData } = await supabase
+      .from('locations')
+      .select('*')
+      .order('name');
+
+      if (error) {
+      console.error('Error fetching locations:', error);
+      return;
+    }
+
+    locations = locationData ?? [];
+  });
+
   async function handleSubmit() {
     loading = true;
     error = null;
@@ -30,7 +49,7 @@
           family,
           manufacturer,
           quantity,
-          location,
+          location_id: location,
           user_id: (await supabase.auth.getUser()).data.user?.id
         })
         .select()
@@ -121,13 +140,17 @@
       <label class="block text-sm font-medium mb-1" for="location">
         Location
       </label>
-      <input
+      <select
         id="location"
-        type="text"
         bind:value={location}
         class="w-full p-2 border rounded"
-        placeholder="e.g., Bin A1"
-      />
+        required
+      >
+        <option value="">Select a location...</option>
+        {#each locations as loc (loc.id)}
+          <option value={loc.id}>{loc.name}</option>
+        {/each}
+      </select>
     </div>
 
     {#if type === 'resistor'}

@@ -31,6 +31,15 @@ export type Database = {
 					user_id?: string;
 				};
 			};
+			locations: {
+				Row: {
+					id: string;
+					name: string;
+					description: string;
+					created_at: string;
+					updated_at: string;
+				};
+			};
 			resistor_specs: {
 				Row: {
 					id: string;
