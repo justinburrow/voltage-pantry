@@ -2,6 +2,24 @@
 export type Database = {
 	public: {
 		Tables: {
+			component_types: {
+				Row: {
+					id: string;
+					name: string;
+					description: string | null;
+					created_at: string;
+					updated_at: string;
+				};
+				Insert: {
+					id?: string;
+					name: string;
+					description?: string | null;
+				};
+				Update: {
+					name?: string;
+					description?: string | null;
+				};
+			};
 			components: {
 				Row: {
 					id: string;

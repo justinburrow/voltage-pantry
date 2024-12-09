@@ -1,12 +1,14 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { Database } from '$app/DatabaseDefinitions';
-
   export let data;
-  let locations: Database['public']['Tables']['locations']['Row'][] = [];
-  let supabase = data.supabase;
 
-  let type = 'resistor';
+  type ComponentType = Database['public']['Tables']['component_types']['Row'];
+
+  let locations: Database['public']['Tables']['locations']['Row'][] = [];
+
+  let componentTypes: ComponentType[] = [];
+  let selectedType: ComponentType | null = null;
   let family = '';
   let manufacturer = '';
   let quantity = 0;
@@ -21,45 +23,48 @@
   let error: string | null = null;
   let success = false;
 
-  onMount(async () => {
-    const { data: locationData } = await supabase
-      .from('locations')
+  async function loadComponentTypes() {
+    const { data: types, error: loadError } = await data.supabase
+      .from('component_types')
       .select('*')
       .order('name');
 
-      if (error) {
-      console.error('Error fetching locations:', error);
+    if (loadError) {
+      console.error('Error loading component types:', loadError);
       return;
     }
 
-    locations = locationData ?? [];
-  });
+    componentTypes = types || [];
+  }
 
   async function handleSubmit() {
+    if (!selectedType) return;
+
     loading = true;
     error = null;
     success = false;
 
     try {
-      // Insert base component
-      const { data: component, error: componentError } = await supabase
+      const { data: userData } = await data.supabase.auth.getUser();
+
+      const { data: component, error: componentError } = await data.supabase
         .from('components')
         .insert({
-          type,
+          type: selectedType.name,
+          type_id: selectedType.id,
           family,
           manufacturer,
           quantity,
-          location_id: location,
-          user_id: (await supabase.auth.getUser()).data.user?.id
+          location,
+          user_id: userData.user?.id
         })
         .select()
         .single();
 
       if (componentError) throw componentError;
 
-      // Insert resistor specs if it's a resistor
-      if (type === 'resistor' && component) {
-        const { error: specsError } = await supabase
+      if (selectedType.name === 'resistor' && component) {
+        const { error: specsError } = await data.supabase
           .from('resistor_specs')
           .insert({
             component_id: component.id,
@@ -78,7 +83,10 @@
       loading = false;
     }
   }
+
+  onMount(loadComponentTypes);
 </script>
+
 
 <div class="max-w-2xl mx-auto p-4">
   <h1 class="text-2xl font-bold mb-6">Add New Component</h1>
@@ -90,10 +98,14 @@
       </label>
       <select
         id="type"
-        bind:value={type}
+        bind:value={selectedType}
         class="w-full p-2 border rounded"
+        required
       >
-        <option value="resistor">Resistor</option>
+        <option value={null}>Select a type...</option>
+        {#each componentTypes as type}
+          <option value={type}>{type.name}</option>
+        {/each}
       </select>
     </div>
 
@@ -153,7 +165,7 @@
       </select>
     </div>
 
-    {#if type === 'resistor'}
+    {#if selectedType?.name === 'resistor'}
       <div class="space-y-4">
         <h2 class="text-lg font-medium">Resistor Specifications</h2>
 
