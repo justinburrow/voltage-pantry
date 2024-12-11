@@ -45,38 +45,41 @@
     success = false;
 
     try {
-      const { data: userData } = await data.supabase.auth.getUser();
-
-      const { data: component, error: componentError } = await data.supabase
-        .from('components')
-        .insert({
-          type: selectedType.name,
-          family,
-          manufacturer,
-          quantity,
-          location, // This now correctly uses the location ID
-          user_id: userData.user?.id
-        })
-        .select()
-        .single();
-
-      if (componentError) throw componentError;
-
-      if (selectedType.name === 'resistor' && component) {
-        const { error: specsError } = await data.supabase
-          .from('resistor_specs')
-          .insert({
-            component_id: component.id,
-            resistance,
-            wattage,
-            tolerance
-          });
-
-        if (specsError) throw specsError;
+      const { data: { user }, error: userError } = await data.supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error('Authentication error - please try logging in again');
       }
 
+    const { data: component, error: componentError } = await data.supabase
+      .from('components')
+      .insert({
+        type: selectedType.name,
+        family,
+        manufacturer,
+        quantity,
+        location,
+        user_id: user.id
+      })
+      .select()
+      .single();
+
+    if (componentError) throw componentError;
+
+    if (selectedType.name === 'resistor' && component) {
+      const { error: specsError } = await data.supabase
+        .from('resistor_specs')
+        .insert({
+          component_id: component.id,
+          resistance,
+          wattage,
+          tolerance
+        });
+
+      if (specsError) throw specsError;
+    }
+
       success = true;
-      // Reset form fields on success
+      // Reset form fields
       family = '';
       manufacturer = '';
       quantity = 0;
@@ -96,7 +99,61 @@
   <h1 class="text-2xl font-bold mb-6">Add New Component</h1>
 
   <form on:submit|preventDefault={handleSubmit} class="space-y-4">
-    <!-- Existing type, family, manufacturer, quantity fields stay the same -->
+    <div>
+      <label class="block text-sm font-medium mb-1" for="type">
+        Type
+      </label>
+      <select
+        id="type"
+        bind:value={selectedType}
+        class="w-full p-2 border rounded"
+        required
+      >
+        <option value={null}>Select a type...</option>
+        {#each componentTypes as type}
+          <option value={type}>{type.name}</option>
+        {/each}
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium mb-1" for="family">
+        Family
+      </label>
+      <input
+        id="family"
+        type="text"
+        bind:value={family}
+        class="w-full p-2 border rounded"
+        placeholder="e.g., metal film"
+      />
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium mb-1" for="manufacturer">
+        Manufacturer
+      </label>
+      <input
+        id="manufacturer"
+        type="text"
+        bind:value={manufacturer}
+        class="w-full p-2 border rounded"
+        placeholder="e.g., Yageo"
+      />
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium mb-1" for="quantity">
+        Quantity
+      </label>
+      <input
+        id="quantity"
+        type="number"
+        bind:value={quantity}
+        min="0"
+        class="w-full p-2 border rounded"
+      />
+    </div>
 
     <div>
       <label class="block text-sm font-medium mb-1" for="location">

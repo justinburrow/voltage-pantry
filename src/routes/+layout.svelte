@@ -9,7 +9,8 @@
   onMount(() => {
     const {
       data: { subscription }
-    } = data.supabase.auth.onAuthStateChange((event, _session) => {
+    } = data.supabase.auth.onAuthStateChange(async (event, _session) => {
+      // Check both user and session during transition period
       if (_session?.expires_at !== data.session?.expires_at) {
         invalidate('supabase:auth');
       }
@@ -17,6 +18,7 @@
 
     return () => subscription.unsubscribe();
   });
+
 
   async function signOut() {
     const { error } = await data.supabase.auth.signOut();

@@ -4,7 +4,7 @@ import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/publi
 import type { Handle } from '@sveltejs/kit';
 
 export const handle: Handle = async ({ event, resolve }) => {
-	event.locals.supabase = createSupabaseServerClient({
+  event.locals.supabase = createSupabaseServerClient({
 		supabaseUrl: PUBLIC_SUPABASE_URL,
 		supabaseKey: PUBLIC_SUPABASE_ANON_KEY,
 		event
@@ -17,13 +17,19 @@ export const handle: Handle = async ({ event, resolve }) => {
 		return session;
 	};
 
-	// Protected routes - add any paths that should be public
 	if (!event.url.pathname.startsWith('/login')) {
-		const session = await event.locals.getSession();
-		if (!session) {
+		const {
+			data: { user },
+			error: userError
+		} = await event.locals.supabase.auth.getUser();
+		if (userError || !user) {
 			throw redirect(303, '/login');
 		}
 	}
 
-	return resolve(event);
+  return resolve(event, {
+		filterSerializedResponseHeaders: (name) => {
+			return name === 'content-range';
+		}
+	});
 };
