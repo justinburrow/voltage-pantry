@@ -13,6 +13,8 @@ node_modules
 Thumbs.db
 flatten_copy.sh
 flattened/*
+codebase.md
+.aidigestignore
 
 # Env
 .env
