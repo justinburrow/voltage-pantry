@@ -1,4 +1,15 @@
-import type { ComponentValueType, NormalizedValue, UnitDefinition } from './types';
+import type { ComponentValueType } from '$app/DatabaseDefinitions';
+
+interface UnitDefinition {
+	symbol: string[];
+	multiplier: number;
+	preferredSymbol: string;
+}
+
+interface NormalizedResult {
+	base_value: number;
+	display_value: string;
+}
 
 const CAPACITANCE_UNITS: Record<string, UnitDefinition> = {
 	pico: { symbol: ['p', 'pf'], multiplier: 1e-12, preferredSymbol: 'pF' },
@@ -25,7 +36,20 @@ const SWITCH_PATTERNS = {
 } as const;
 
 export class ValueNormalizer {
-	static normalizeCapacitance(input: string): NormalizedValue {
+	static normalizeValue(input: string, type: ComponentValueType): NormalizedResult {
+		switch (type) {
+			case 'capacitance':
+				return this.normalizeCapacitance(input);
+			case 'resistance':
+				return this.normalizeResistance(input);
+			case 'switch':
+				return this.normalizeSwitch(input);
+			default:
+				throw new Error(`Unsupported value type: ${type}`);
+		}
+	}
+
+	private static normalizeCapacitance(input: string): NormalizedResult {
 		const cleaned = input.toLowerCase().replace(/\s+/g, '');
 		const match = cleaned.match(/^(\d*\.?\d+)([a-zµ]+)$/i);
 
@@ -44,19 +68,16 @@ export class ValueNormalizer {
 			throw new Error('Unknown capacitance unit');
 		}
 
-		const baseValue = value * unitDef.multiplier;
-		const displayUnit = this.getPreferredCapacitanceUnit(baseValue);
-		const displayValue = this.formatValue(baseValue, displayUnit);
+		const base_value = value * unitDef.multiplier;
+		const displayUnit = this.getPreferredCapacitanceUnit(base_value);
 
 		return {
-			baseValue,
-			displayValue,
-			unit: 'farad',
-			type: 'capacitance'
+			base_value,
+			display_value: this.formatValue(base_value, displayUnit)
 		};
 	}
 
-	static normalizeResistance(input: string): NormalizedValue {
+	private static normalizeResistance(input: string): NormalizedResult {
 		const cleaned = input.toLowerCase().replace(/\s+/g, '');
 		const match = cleaned.match(/^(\d*\.?\d+)([a-zΩ]*)$/i);
 
@@ -71,19 +92,16 @@ export class ValueNormalizer {
 			Object.values(RESISTANCE_UNITS).find((def) => def.symbol.some((s) => unitStr.includes(s))) ||
 			RESISTANCE_UNITS.base;
 
-		const baseValue = value * unitDef.multiplier;
-		const displayUnit = this.getPreferredResistanceUnit(baseValue);
-		const displayValue = this.formatValue(baseValue, displayUnit);
+		const base_value = value * unitDef.multiplier;
+		const displayUnit = this.getPreferredResistanceUnit(base_value);
 
 		return {
-			baseValue,
-			displayValue,
-			unit: 'ohm',
-			type: 'resistance'
+			base_value,
+			display_value: this.formatValue(base_value, displayUnit)
 		};
 	}
 
-	static normalizeSwitch(input: string): NormalizedValue {
+	private static normalizeSwitch(input: string): NormalizedResult {
 		const cleaned = input.toLowerCase().replace(/\s+/g, '');
 
 		let poles: number;
@@ -101,37 +119,33 @@ export class ValueNormalizer {
 			throws = config.throws;
 		}
 
-		const baseValue = poles * 10 + throws;
-		const displayValue = `${poles}P${throws}T`;
+		const base_value = poles * 10 + throws;
 
 		return {
-			baseValue,
-			displayValue,
-			unit: 'configuration',
-			type: 'switch'
+			base_value,
+			display_value: `${poles}P${throws}T`
 		};
 	}
 
-	private static getPreferredCapacitanceUnit(baseValue: number): UnitDefinition {
-		if (baseValue < 1e-9) return CAPACITANCE_UNITS.pico;
-		if (baseValue < 1e-6) return CAPACITANCE_UNITS.nano;
-		if (baseValue < 1e-3) return CAPACITANCE_UNITS.micro;
-		if (baseValue < 1) return CAPACITANCE_UNITS.milli;
+	private static getPreferredCapacitanceUnit(base_value: number): UnitDefinition {
+		if (base_value < 1e-9) return CAPACITANCE_UNITS.pico;
+		if (base_value < 1e-6) return CAPACITANCE_UNITS.nano;
+		if (base_value < 1e-3) return CAPACITANCE_UNITS.micro;
+		if (base_value < 1) return CAPACITANCE_UNITS.milli;
 		return CAPACITANCE_UNITS.base;
 	}
 
-	private static getPreferredResistanceUnit(baseValue: number): UnitDefinition {
-		if (baseValue < 1) return RESISTANCE_UNITS.milli;
-		if (baseValue < 1e3) return RESISTANCE_UNITS.base;
-		if (baseValue < 1e6) return RESISTANCE_UNITS.kilo;
+	private static getPreferredResistanceUnit(base_value: number): UnitDefinition {
+		if (base_value < 1) return RESISTANCE_UNITS.milli;
+		if (base_value < 1e3) return RESISTANCE_UNITS.base;
+		if (base_value < 1e6) return RESISTANCE_UNITS.kilo;
 		return RESISTANCE_UNITS.mega;
 	}
 
-	private static formatValue(baseValue: number, unit: UnitDefinition): string {
-		const scaledValue = baseValue / unit.multiplier;
+	private static formatValue(base_value: number, unit: UnitDefinition): string {
+		const scaledValue = base_value / unit.multiplier;
 		return `${scaledValue}${unit.preferredSymbol}`;
 	}
 }
 
-// Convenience exports
 export { CAPACITANCE_UNITS, RESISTANCE_UNITS, SWITCH_PATTERNS };

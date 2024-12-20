@@ -1,5 +1,12 @@
 export type ComponentValueType = 'capacitance' | 'resistance' | 'switch' | 'voltage' | 'current';
 
+export type ProjectComponent = {
+	component_id: string;
+	quantity_needed: number;
+	priority?: 1 | 2 | 3 | 4 | 5;
+	notes?: string;
+};
+
 export type Database = {
 	public: {
 		Tables: {
@@ -7,116 +14,92 @@ export type Database = {
 				Row: {
 					id: string;
 					name: string;
-					description: string | null;
 					value_type: ComponentValueType | null;
 					unit: string | null;
 					created_at: string;
-					updated_at: string;
 				};
 				Insert: {
 					id?: string;
 					name: string;
-					description?: string | null;
 					value_type?: ComponentValueType | null;
 					unit?: string | null;
 				};
 				Update: {
 					name?: string;
-					description?: string | null;
 					value_type?: ComponentValueType | null;
 					unit?: string | null;
-				};
-			};
-			normalized_values: {
-				Row: {
-					id: string;
-					component_id: string;
-					base_value: number;
-					display_value: string;
-					value_type: ComponentValueType;
-					unit: string;
-					created_at: string;
-					updated_at: string;
-				};
-				Insert: {
-					id?: string;
-					component_id: string;
-					base_value: number;
-					display_value: string;
-					value_type: ComponentValueType;
-					unit: string;
-				};
-				Update: {
-					base_value?: number;
-					display_value?: string;
-					value_type?: ComponentValueType;
-					unit?: string;
 				};
 			};
 			components: {
 				Row: {
 					id: string;
-					type: string;
-					family: string;
-					manufacturer: string;
+					type_id: string;
+					family: string | null;
+					manufacturer: string | null;
 					quantity: number;
-					location: string;
+					location_id: string;
 					user_id: string;
-					created_at: string;
-					updated_at: string;
-					normalized_value?: {
-						base_value: number;
-						display_value: string;
-						value_type: ComponentValueType;
-						unit: string;
-					};
-				};
-				Insert: {
-					type: string;
-					family: string;
-					manufacturer?: string;
-					quantity?: number;
-					location?: string;
-					user_id: string;
-				};
-				Update: {
-					type?: string;
-					family?: string;
-					manufacturer?: string;
-					quantity?: number;
-					location?: string;
-					user_id?: string;
-				};
-			};
-			resistor_specs: {
-				Row: {
-					id: string;
-					component_id: string;
-					resistance: number;
-					wattage: number;
-					tolerance: number;
+					base_value: number | null;
+					display_value: string | null;
 					created_at: string;
 					updated_at: string;
 				};
 				Insert: {
-					component_id: string;
-					resistance: number;
-					wattage: number;
-					tolerance: number;
+					id?: string;
+					type_id: string;
+					family?: string | null;
+					manufacturer?: string | null;
+					quantity?: number;
+					location_id: string;
+					user_id: string;
+					base_value?: number | null;
+					display_value?: string | null;
 				};
 				Update: {
-					resistance?: number;
-					wattage?: number;
-					tolerance?: number;
+					type_id?: string;
+					family?: string | null;
+					manufacturer?: string | null;
+					quantity?: number;
+					location_id?: string;
+					base_value?: number | null;
+					display_value?: string | null;
 				};
 			};
 			locations: {
 				Row: {
 					id: string;
 					name: string;
-					description: string;
+					description: string | null;
+					created_at: string;
+				};
+				Insert: {
+					id?: string;
+					name: string;
+					description?: string | null;
+				};
+				Update: {
+					name?: string;
+					description?: string | null;
+				};
+			};
+			projects: {
+				Row: {
+					id: string;
+					name: string;
+					user_id: string;
+					components: ProjectComponent[];
 					created_at: string;
 					updated_at: string;
+				};
+				Insert: {
+					id?: string;
+					name: string;
+					user_id: string;
+					components?: ProjectComponent[];
+				};
+				Update: {
+					name?: string;
+					components?: ProjectComponent[];
 				};
 			};
 		};
@@ -128,30 +111,17 @@ export type Database = {
 				};
 				Returns: Array<Database['public']['Tables']['components']['Row']>;
 			};
-			search_components_by_value: {
-				Args: {
-					value_type: ComponentValueType;
-					min_value: number;
-					max_value: number;
-				};
-				Returns: Array<
-					Omit<Database['public']['Tables']['components']['Row'], 'normalized_value'> & {
-						base_value: number;
-						display_value: string;
-					}
-				>;
-			};
 		};
 	};
 };
 
-// Utility types for component operations
-export type ComponentWithValue = Database['public']['Tables']['components']['Row'] & {
-	normalized_value: NonNullable<
-		Database['public']['Tables']['components']['Row']['normalized_value']
-	>;
+// Utility types for enhanced type safety
+export type ComponentWithType = Database['public']['Tables']['components']['Row'] & {
+	component_type: Database['public']['Tables']['component_types']['Row'];
 };
 
-export type ComponentSearchResult = Database['public']['Tables']['components']['Row'] & {
-	normalized_value?: Database['public']['Tables']['normalized_values']['Row'];
+export type ProjectWithComponents = Database['public']['Tables']['projects']['Row'] & {
+	resolved_components?: Array<ComponentWithType>;
 };
+
+export type ComponentSearchResult = ComponentWithType;
