@@ -8,5 +8,23 @@
 - There's only THREE places I ever put components in, and I can't, for the life of me, remember which place I put it in, and all three of them would take hours to go through.
 - Ok fine, I'm out of 11k resistors. Do I have any 10k's in stock?
 
+## Tech Stack
+- Svelte 5 + Typescript
+- Supabase
+- Tailwind
+- Shadcn-Svelte components
+
+### Feature Overview
+- **Personal component inventory management**
+  - Logging Locations (i.e. which bag I stuck it in and which drawer it lives in)
+  - Component primary values and secondary facets
+- **Project-based Inventory Allocation**
+  - Overview of active projects and the inventory needed to complete them
+  - Soft allocating inventory and logging which Project they're marked for
+  - Assigning incoming inventory to waiting Projects on a priority-basis
+- **Component Search**
+  - Fuzzy, handles 1k or 1000r or 0.10M (who even uses that)
+  - Can return "close enough" values set by specified ranges
+  - Shows status of available inventory - whether truly free or available, but kind of meant for that one thing...
 
 
