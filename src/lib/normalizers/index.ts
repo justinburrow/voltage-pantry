@@ -1,17 +1,4 @@
-// src/lib/normalizers/index.ts
-
-export type NormalizedValue = {
-	baseValue: number;
-	displayValue: string;
-	unit: string;
-	type: 'capacitance' | 'resistance' | 'switch' | 'voltage' | 'current';
-};
-
-type UnitDefinition = {
-	symbol: string[];
-	multiplier: number;
-	preferredSymbol: string;
-};
+import type { ComponentValueType, NormalizedValue, UnitDefinition } from './types';
 
 const CAPACITANCE_UNITS: Record<string, UnitDefinition> = {
 	pico: { symbol: ['p', 'pf'], multiplier: 1e-12, preferredSymbol: 'pF' },
@@ -35,13 +22,11 @@ const SWITCH_PATTERNS = {
 	dpdt: { poles: 2, throws: 2 },
 	'3pdt': { poles: 3, throws: 2 },
 	'4pdt': { poles: 4, throws: 2 }
-};
+} as const;
 
 export class ValueNormalizer {
 	static normalizeCapacitance(input: string): NormalizedValue {
-		// Clean and standardize input
 		const cleaned = input.toLowerCase().replace(/\s+/g, '');
-		// Extract numeric value and unit
 		const match = cleaned.match(/^(\d*\.?\d+)([a-zµ]+)$/i);
 
 		if (!match) {
@@ -51,7 +36,6 @@ export class ValueNormalizer {
 		const [, valueStr, unitStr] = match;
 		const value = parseFloat(valueStr);
 
-		// Find matching unit definition
 		const unitDef = Object.values(CAPACITANCE_UNITS).find((def) =>
 			def.symbol.some((s) => unitStr.includes(s))
 		);
@@ -61,10 +45,8 @@ export class ValueNormalizer {
 		}
 
 		const baseValue = value * unitDef.multiplier;
-
-		// Determine best display unit
 		const displayUnit = this.getPreferredCapacitanceUnit(baseValue);
-		const displayValue = this.formatCapacitanceValue(baseValue, displayUnit);
+		const displayValue = this.formatValue(baseValue, displayUnit);
 
 		return {
 			baseValue,
@@ -76,7 +58,6 @@ export class ValueNormalizer {
 
 	static normalizeResistance(input: string): NormalizedValue {
 		const cleaned = input.toLowerCase().replace(/\s+/g, '');
-		// Handle special case of bare numbers being ohms
 		const match = cleaned.match(/^(\d*\.?\d+)([a-zΩ]*)$/i);
 
 		if (!match) {
@@ -86,16 +67,13 @@ export class ValueNormalizer {
 		const [, valueStr, unitStr] = match;
 		const value = parseFloat(valueStr);
 
-		// Find matching unit definition
 		const unitDef =
 			Object.values(RESISTANCE_UNITS).find((def) => def.symbol.some((s) => unitStr.includes(s))) ||
-			RESISTANCE_UNITS.base; // Default to base unit if no unit specified
+			RESISTANCE_UNITS.base;
 
 		const baseValue = value * unitDef.multiplier;
-
-		// Determine best display unit
 		const displayUnit = this.getPreferredResistanceUnit(baseValue);
-		const displayValue = this.formatResistanceValue(baseValue, displayUnit);
+		const displayValue = this.formatValue(baseValue, displayUnit);
 
 		return {
 			baseValue,
@@ -108,30 +86,30 @@ export class ValueNormalizer {
 	static normalizeSwitch(input: string): NormalizedValue {
 		const cleaned = input.toLowerCase().replace(/\s+/g, '');
 
-		// Try standard format first (1p2t)
-		let match = cleaned.match(/^(\d+)p(\d+)t$/);
-		if (match) {
-			const [, poles, throws] = match;
-			return {
-				baseValue: parseInt(poles) * 10 + parseInt(throws),
-				displayValue: `${poles}P${throws}T`,
-				unit: 'configuration',
-				type: 'switch'
-			};
+		let poles: number;
+		let throws: number;
+
+		const standardMatch = cleaned.match(/^(\d+)p(\d+)t$/);
+		if (standardMatch) {
+			[, poles, throws] = standardMatch.map(Number);
+		} else {
+			const config = SWITCH_PATTERNS[cleaned as keyof typeof SWITCH_PATTERNS];
+			if (!config) {
+				throw new Error('Invalid switch configuration');
+			}
+			poles = config.poles;
+			throws = config.throws;
 		}
 
-		// Try named format (spdt, dpdt, etc)
-		const config = SWITCH_PATTERNS[cleaned as keyof typeof SWITCH_PATTERNS];
-		if (config) {
-			return {
-				baseValue: config.poles * 10 + config.throws,
-				displayValue: cleaned.toUpperCase(),
-				unit: 'configuration',
-				type: 'switch'
-			};
-		}
+		const baseValue = poles * 10 + throws;
+		const displayValue = `${poles}P${throws}T`;
 
-		throw new Error('Invalid switch configuration');
+		return {
+			baseValue,
+			displayValue,
+			unit: 'configuration',
+			type: 'switch'
+		};
 	}
 
 	private static getPreferredCapacitanceUnit(baseValue: number): UnitDefinition {
@@ -149,13 +127,11 @@ export class ValueNormalizer {
 		return RESISTANCE_UNITS.mega;
 	}
 
-	private static formatCapacitanceValue(baseValue: number, unit: UnitDefinition): string {
-		const scaledValue = baseValue / unit.multiplier;
-		return `${scaledValue}${unit.preferredSymbol}`;
-	}
-
-	private static formatResistanceValue(baseValue: number, unit: UnitDefinition): string {
+	private static formatValue(baseValue: number, unit: UnitDefinition): string {
 		const scaledValue = baseValue / unit.multiplier;
 		return `${scaledValue}${unit.preferredSymbol}`;
 	}
 }
+
+// Convenience exports
+export { CAPACITANCE_UNITS, RESISTANCE_UNITS, SWITCH_PATTERNS };

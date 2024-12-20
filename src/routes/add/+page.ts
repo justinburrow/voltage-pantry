@@ -20,8 +20,20 @@ export const load: PageLoad = async ({ parent }) => {
 		throw error(503, 'No locations configured - Administrator setup required');
 	}
 
+  const { data: session, error: sessionError } = await supabase
+		.from('components')
+		.select('*')
+		.eq('user_id', parentData.session?.user.id)
+		.single();
+
+	if (sessionError) {
+		console.error('Session loading error:', sessionError);
+		throw error(500, 'Failed to load session');
+	}
+
 	return {
 		...parentData, // Important: preserve all parent data
-		locations
+		locations,
+		session
 	};
 };

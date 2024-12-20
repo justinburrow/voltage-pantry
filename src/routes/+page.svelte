@@ -34,7 +34,7 @@
 
 <div class="space-y-6">
   <div class="max-w-2xl mx-auto">
-    <h1 class="text-2xl font-bold mb-6">Electronic Component Search</h1>
+    <h1 class="mb-6 text-2xl font-bold">Electronic Component Search</h1>
 
     <div class="flex gap-2">
       <input
@@ -47,7 +47,7 @@
       <button
         on:click={handleSearch}
         disabled={loading}
-        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400"
+        class="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-blue-400"
       >
         {loading ? 'Searching...' : 'Search'}
       </button>
@@ -59,7 +59,7 @@
       <div class="p-4 bg-gray-100 rounded">
         <details>
           <summary class="cursor-pointer">Debug Info (Results Found)</summary>
-          <pre class="mt-2 p-2 bg-white rounded text-sm overflow-auto">
+          <pre class="p-2 mt-2 overflow-auto text-sm bg-white rounded">
             {JSON.stringify(searchResults, null, 2)}
           </pre>
         </details>
@@ -77,7 +77,7 @@
 
   {#if searchResults.length > 0}
     <div class="max-w-4xl mx-auto">
-      <h2 class="text-xl font-semibold mb-4">Results</h2>
+      <h2 class="mb-4 text-xl font-semibold">Results</h2>
       <div class="grid gap-4">
         {#each searchResults as component}
           <div class="p-4 border rounded-md hover:bg-gray-50">
